@@ -1,0 +1,16 @@
+<svg width="2732" height="2732" viewBox="0 0 2732 2732" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f5f0e8"/>
+      <stop offset="100%" stop-color="#ede5d0"/>
+    </linearGradient>
+  </defs>
+  <rect width="2732" height="2732" fill="url(#bg)"/>
+  <g transform="translate(1366,1226)">
+    <rect x="-70" y="-560" width="140" height="1120" rx="16" fill="#2c2416"/>
+    <rect x="-400" y="-150" width="800" height="140" rx="16" fill="#2c2416"/>
+  </g>
+  <circle cx="1366" cy="1226" r="36" fill="#b8902a"/>
+  <text x="1366" y="1580" font-family="Georgia, 'Times New Roman', serif" font-size="72" font-weight="500"
+        fill="#2c2416" text-anchor="middle" letter-spacing="18">ORA ET LABORA</text>
+</svg>

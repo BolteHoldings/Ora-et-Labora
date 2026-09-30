@@ -1,0 +1,46 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2c2416"/>
+      <stop offset="100%" stop-color="#1c1208"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e8c878"/>
+      <stop offset="100%" stop-color="#b8902a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+
+  <!-- Inner border frame -->
+  <rect x="72" y="72" width="880" height="880" fill="none" stroke="#8b6914" stroke-width="4" opacity="0.55"/>
+
+  <!-- Corner ornaments -->
+  <g stroke="#b8902a" stroke-width="5" opacity="0.85">
+    <path d="M 100 160 L 100 100 L 160 100" fill="none"/>
+    <path d="M 864 100 L 924 100 L 924 160" fill="none"/>
+    <path d="M 924 864 L 924 924 L 864 924" fill="none"/>
+    <path d="M 160 924 L 100 924 L 100 864" fill="none"/>
+  </g>
+
+  <!-- Central cross -->
+  <g transform="translate(512,470)">
+    <rect x="-26" y="-210" width="52" height="420" rx="6" fill="url(#gold)"/>
+    <rect x="-150" y="-56" width="300" height="52" rx="6" fill="url(#gold)"/>
+  </g>
+
+  <!-- Radiant flourish at cross intersection -->
+  <circle cx="512" cy="470" r="14" fill="#f5f0e8" opacity="0.9"/>
+
+  <!-- Small flanking stars -->
+  <g fill="#d4aa50" opacity="0.8">
+    <circle cx="512" cy="260" r="7"/>
+    <circle cx="512" cy="740" r="7"/>
+  </g>
+
+  <!-- Bottom rule line and monogram initials -->
+  <line x1="380" y1="820" x2="644" y2="820" stroke="#8b6914" stroke-width="3" opacity="0.6"/>
+  <text x="512" y="880" font-family="Georgia, 'Times New Roman', serif" font-size="46" font-weight="500"
+        fill="#e8dcc0" text-anchor="middle" letter-spacing="10">O L</text>
+</svg>
