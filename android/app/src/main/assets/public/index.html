@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Ora et Labora</title>
+<style>
+  :root {
+    --bg: #F5F0E8;
+    --bg-elevated: #FFFFFF;
+    --ink: #2E2A24;
+    --ink-soft: #6B6358;
+    --accent: #8A6D3B;
+    --accent-soft: #D9CBAE;
+    --line: #E2D8C3;
+    --danger: #A84432;
+    --good: #4C6B4F;
+    --radius: 14px;
+    --font-scale: 1;
+  }
+  [data-theme="dark"] {
+    --bg: #1C1812;
+    --bg-elevated: #272019;
+    --ink: #F0E9DC;
+    --ink-soft: #B8AD98;
+    --accent: #D8B873;
+    --accent-soft: #3A3224;
+    --line: #3A3224;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg); color: var(--ink);
+    font-family: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+    font-size: calc(16px * var(--font-scale));
+    -webkit-tap-highlight-color: transparent;
+    transition: background .2s, color .2s;
+  }
+  #app { min-height: 100%; display: flex; flex-direction: column; padding-bottom: 72px; }
+  header.top {
+    padding: 20px 20px 12px; text-align: center;
+    border-bottom: 1px solid var(--line);
+  }
+  header.top h1 { margin: 0; font-size: 1.4em; letter-spacing: .03em; }
+  header.top p.date { margin: 4px 0 0; color: var(--ink-soft); font-size: .85em; }
+  main { flex: 1; padding: 16px; max-width: 560px; margin: 0 auto; width: 100%; }
+  .screen { display: none; }
+  .screen.active { display: block; animation: fade .18s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px);} to { opacity: 1; transform: none;} }
+
+  .card {
+    background: var(--bg-elevated); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 18px; margin-bottom: 14px;
+  }
+  .office-card { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+  .office-card .meta h2 { margin: 0 0 4px; font-size: 1.1em; }
+  .office-card .meta p { margin: 0; color: var(--ink-soft); font-size: .85em; }
+  .office-card .status { font-size: 1.4em; }
+  .office-card.locked { opacity: .55; }
+  .streak-banner {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--accent-soft); border-radius: var(--radius);
+    padding: 12px 16px; margin-bottom: 16px; font-size: .9em;
+  }
+  .streak-banner .flame { font-size: 1.3em; }
+
+  button {
+    font-family: inherit; font-size: 1em; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--bg-elevated); color: var(--ink); padding: 10px 16px; cursor: pointer;
+  }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.block { width: 100%; margin-top: 8px; }
+  button:active { transform: scale(.98); }
+
+  nav.tabbar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    display: flex; background: var(--bg-elevated); border-top: 1px solid var(--line);
+    padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  }
+  nav.tabbar button {
+    flex: 1; background: none; border: none; display: flex; flex-direction: column;
+    align-items: center; gap: 2px; font-size: .7em; color: var(--ink-soft);
+  }
+  nav.tabbar button .icon { font-size: 1.3em; }
+  nav.tabbar button.active { color: var(--accent); }
+
+  .reading-step { margin-bottom: 20px; }
+  .reading-step .label {
+    text-transform: uppercase; letter-spacing: .08em; font-size: .7em;
+    color: var(--accent); margin-bottom: 6px;
+  }
+  .reading-step .text { line-height: 1.6; }
+  .reading-step .ref { color: var(--ink-soft); font-size: .8em; margin-top: 4px; }
+  textarea.journal {
+    width: 100%; min-height: 110px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--ink); padding: 12px; font-family: inherit;
+    font-size: .95em; resize: vertical;
+  }
+
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0; border-bottom: 1px solid var(--line);
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row .label { font-size: .95em; }
+  .settings-row .sub { font-size: .75em; color: var(--ink-soft); }
+  .switch { position: relative; width: 46px; height: 26px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .track {
+    position: absolute; inset: 0; background: var(--line); border-radius: 999px; transition: .15s;
+  }
+  .switch .track:before {
+    content: ""; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px;
+    background: #fff; border-radius: 50%; transition: .15s;
+  }
+  .switch input:checked + .track { background: var(--accent); }
+  .switch input:checked + .track:before { transform: translateX(20px); }
+
+  .pin-screen, .paywall {
+    position: fixed; inset: 0; background: var(--bg); z-index: 50;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px;
+  }
+  .pin-dots { display: flex; gap: 14px; margin: 24px 0; }
+  .pin-dots .dot { width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--accent); }
+  .pin-dots .dot.filled { background: var(--accent); }
+  .pin-pad { display: grid; grid-template-columns: repeat(3, 64px); gap: 14px; }
+  .pin-pad button { width: 64px; height: 64px; border-radius: 50%; font-size: 1.2em; }
+
+  .paywall .price-row { display: flex; gap: 10px; margin: 16px 0; width: 100%; max-width: 320px; }
+  .paywall .price-option {
+    flex: 1; border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px; text-align: center; cursor: pointer;
+  }
+  .paywall .price-option.selected { border-color: var(--accent); background: var(--accent-soft); }
+  .paywall .price-option .plan { font-size: .85em; color: var(--ink-soft); }
+  .paywall .price-option .price { font-size: 1.1em; margin-top: 4px; }
+
+  .toast {
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 999px;
+    font-size: .85em; opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .toast.show { opacity: 1; }
+
+  input[type="range"] { width: 100%; }
+  a.link { color: var(--accent); text-decoration: none; font-size: .85em; }
+  .history-entry { margin-bottom: 10px; }
+  .history-entry .when { font-size: .75em; color: var(--ink-soft); }
+  .empty-state { text-align: center; color: var(--ink-soft); padding: 40px 20px; font-size: .9em; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="top">
+    <h1>Ora et Labora</h1>
+    <p class="date" id="todayLabel"></p>
+  </header>
+
+  <main>
+
+    <!-- TODAY -->
+    <section class="screen active" id="screen-today">
+      <div class="streak-banner" id="streakBanner" style="display:none;">
+        <span class="flame">🔥</span>
+        <span id="streakText"></span>
+      </div>
+
+      <div class="card office-card" id="card-morning" data-office="morning">
+        <div class="meta">
+          <h2>Morning Office</h2>
+          <p id="morning-sub">A quiet beginning</p>
+        </div>
+        <div class="status" id="morning-status">○</div>
+      </div>
+
+      <div class="card office-card" id="card-evening" data-office="evening">
+        <div class="meta">
+          <h2>Evening Office</h2>
+          <p id="evening-sub">An examined close</p>
+        </div>
+        <div class="status" id="evening-status">○</div>
+      </div>
+    </section>
+
+    <!-- READING -->
+    <section class="screen" id="screen-reading">
+      <button id="backFromReading">&larr; Back</button>
+      <div class="card">
+        <h2 id="readingTitle"></h2>
+
+        <div class="reading-step">
+          <div class="label">Opening Sentence</div>
+          <div class="text" id="step-opening"></div>
+        </div>
+
+        <div class="reading-step">
+          <div class="label">A Reading</div>
+          <div class="text" id="step-scripture"></div>
+          <div class="ref" id="step-ref"></div>
+        </div>
+
+        <div class="reading-step">
+          <div class="label">For Reflection</div>
+          <div class="text" id="step-reflection"></div>
+        </div>
+
+        <div class="reading-step">
+          <div class="label">Journal</div>
+          <textarea class="journal" id="journalInput" placeholder="Write as little or as much as you like..."></textarea>
+        </div>
+
+        <div class="reading-step">
+          <div class="label">Closing Prayer</div>
+          <div class="text" id="step-closing"></div>
+        </div>
+
+        <button class="primary block" id="completeOffice">Mark Complete</button>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section class="screen" id="screen-history">
+      <h2>History</h2>
+      <div id="historyList"></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="screen" id="screen-settings">
+      <h2>Settings</h2>
+
+      <div class="card">
+        <div class="settings-row">
+          <div>
+            <div class="label">Dark Mode</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggleDark" />
+            <span class="track"></span>
+          </label>
+        </div>
+        <div class="settings-row" style="display:block;">
+          <div class="label">Text Size</div>
+          <input type="range" id="fontSlider" min="0.85" max="1.35" step="0.05" />
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="label">Morning Reminder</div>
+          </div>
+          <input type="time" id="morningTime" />
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="label">Evening Reminder</div>
+          </div>
+          <input type="time" id="eveningTime" />
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="settings-row">
+          <div>
+            <div class="label">App Lock</div>
+            <div class="sub">Require a PIN to open the app</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggleLock" />
+            <span class="track"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="settings-row">
+          <div>
+            <div class="label" id="subStatusLabel">Free</div>
+            <div class="sub">Unlocks the full content library</div>
+          </div>
+          <button id="manageSubBtn">Upgrade</button>
+        </div>
+        <div class="settings-row">
+          <div class="label">Restore Purchases</div>
+          <button id="restoreBtn">Restore</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="settings-row"><a class="link" href="PRIVACY_POLICY.html" target="_blank">Privacy Policy</a></div>
+        <div class="settings-row"><a class="link" href="TERMS_OF_SERVICE.html" target="_blank">Terms of Service</a></div>
+      </div>
+    </section>
+
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab active" data-screen="today"><span class="icon">☀</span>Today</button>
+    <button class="tab" data-screen="history"><span class="icon">📖</span>History</button>
+    <button class="tab" data-screen="settings"><span class="icon">⚙</span>Settings</button>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<!-- PIN LOCK SCREEN -->
+<div class="pin-screen" id="pinScreen" style="display:none;">
+  <h2 id="pinPrompt">Enter PIN</h2>
+  <div class="pin-dots" id="pinDots"></div>
+  <div class="pin-pad" id="pinPad"></div>
+  <button id="pinCancel" style="margin-top:20px;">Cancel</button>
+</div>
+
+<!-- PAYWALL -->
+<div class="paywall" id="paywallScreen" style="display:none;">
+  <h2>Unlock the Full Office</h2>
+  <p style="text-align:center; color:var(--ink-soft); max-width:320px;">
+    One day of each office is free. A subscription unlocks the full year of readings, reflections, and journaling history.
+  </p>
+  <div class="price-row">
+    <div class="price-option selected" data-plan="monthly">
+      <div class="plan">Monthly</div>
+      <div class="price">$1.99</div>
+    </div>
+    <div class="price-option" data-plan="annual">
+      <div class="plan">Annual</div>
+      <div class="price">$14.99</div>
+    </div>
+  </div>
+  <button class="primary block" id="subscribeBtn" style="max-width:320px;">Subscribe</button>
+  <button id="paywallClose" style="margin-top:10px;">Not now</button>
+</div>
+
+<script>
+/* =========================================================
+   Capacitor plugin access (safe no-ops when not in a native shell)
+   ========================================================= */
+const Cap = window.Capacitor || null;
+const Plugins = (Cap && Cap.Plugins) || {};
+const isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
+
+/* =========================================================
+   Content: original reflections + public-domain (KJV) scripture.
+   Day 1 of each office is free; the rest require the entitlement.
+   ========================================================= */
+const OFFICES = {
+  morning: [
+    {
+      opening: "The night is past, and a new day lies open before us, unmarked and unearned.",
+      scripture: "This is the day which the LORD hath made; we will rejoice and be glad in it.",
+      ref: "Psalm 118:24 (KJV)",
+      reflection: "What would it mean to receive this day as a gift rather than a task to get through?",
+      closing: "Lord, steady my hands for the work ahead, and keep my heart unhurried. Amen."
+    },
+    {
+      opening: "Before the house wakes and the list of the day asserts itself, there is this: stillness, and the chance to listen.",
+      scripture: "Be still, and know that I am God.",
+      ref: "Psalm 46:10 (KJV)",
+      reflection: "Where in yesterday did you move faster than your attention could follow? What might slowing down look like today?",
+      closing: "Teach me, this morning, to labor without losing the stillness beneath the labor. Amen."
+    },
+    {
+      opening: "Mercy does not wait for us to earn it; it is new before we have done anything to deserve it.",
+      scripture: "It is of the LORD's mercies that we are not consumed, because his compassions fail not. They are new every morning: great is thy faithfulness.",
+      ref: "Lamentations 3:22-23 (KJV)",
+      reflection: "Is there a failure from yesterday you are still carrying? What would it mean to set it down this morning?",
+      closing: "Renew in me today what yesterday wore thin. Amen."
+    }
+  ],
+  evening: [
+    {
+      opening: "The work of the day is set down, finished or not. What remains is to notice what the day actually held.",
+      scripture: "The LORD is my shepherd; I shall not want... he leadeth me beside the still waters.",
+      ref: "Psalm 23:1-2 (KJV)",
+      reflection: "Where today did you sense you were being led, even in something small?",
+      closing: "Lord, gather up what I could not finish, and let me rest without finishing it. Amen."
+    },
+    {
+      opening: "Examine the day honestly, without flattering or punishing yourself — simply look.",
+      scripture: "Search me, O God, and know my heart: try me, and know my thoughts.",
+      ref: "Psalm 139:23 (KJV)",
+      reflection: "Name one moment today you are grateful for, and one you wish had gone differently.",
+      closing: "Into your keeping I commend this day, its gladness and its failures alike. Amen."
+    },
+    {
+      opening: "Darkness is not an enemy to be outrun but a room to rest in.",
+      scripture: "I will both lay me down in peace, and sleep: for thou, LORD, only makest me dwell in safety.",
+      ref: "Psalm 4:8 (KJV)",
+      reflection: "What are you still holding onto that belongs to tomorrow, not tonight?",
+      closing: "Watch over those I love while I sleep, and over me. Amen."
+    }
+  ]
+};
+
+/* =========================================================
+   State
+   ========================================================= */
+const State = {
+  get(key, fallback) {
+    try {
+      const v = localStorage.getItem(key);
+      return v === null ? fallback : JSON.parse(v);
+    } catch (e) { return fallback; }
+  },
+  set(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+  }
+};
+
+const todayKey = () => new Date().toISOString().slice(0, 10);
+const dayIndex = () => {
+  // Rotates through the available content for each office, deterministic by date.
+  const d = new Date();
+  const start = new Date(d.getFullYear(), 0, 1);
+  const diff = Math.floor((d - start) / 86400000);
+  return diff;
+};
+
+function officeIndexForToday(office) {
+  const list = OFFICES[office];
+  return dayIndex() % list.length;
+}
+
+function isEntitled() {
+  return !!State.get('entitled', false);
+}
+
+function isOfficeLocked(office) {
+  const idx = officeIndexForToday(office);
+  if (idx === 0) return false; // first slot is always free
+  return !isEntitled();
+}
+
+function completedToday(office) {
+  const log = State.get('completions', {});
+  return !!(log[todayKey()] && log[todayKey()][office]);
+}
+
+function markCompleted(office, journalText) {
+  const log = State.get('completions', {});
+  const key = todayKey();
+  if (!log[key]) log[key] = {};
+  log[key][office] = { at: new Date().toISOString(), journal: journalText || '' };
+  State.set('completions', log);
+  recalcStreak();
+}
+
+function recalcStreak() {
+  const log = State.get('completions', {});
+  let streak = 0;
+  let d = new Date();
+  while (true) {
+    const key = d.toISOString().slice(0, 10);
+    const day = log[key];
+    const didSomething = day && (day.morning || day.evening);
+    if (!didSomething) break;
+    streak++;
+    d.setDate(d.getDate() - 1);
+  }
+  State.set('streak', streak);
+  return streak;
+}
+
+/* =========================================================
+   Toast
+   ========================================================= */
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+/* =========================================================
+   Haptics
+   ========================================================= */
+async function tap() {
+  try {
+    if (Plugins.Haptics) await Plugins.Haptics.impact({ style: 'LIGHT' });
+  } catch (e) {}
+}
+
+/* =========================================================
+   Navigation
+   ========================================================= */
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.querySelectorAll('nav.tabbar .tab').forEach(b => b.classList.toggle('active', b.dataset.screen === name));
+}
+
+document.querySelectorAll('nav.tabbar .tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    tap();
+    const screen = btn.dataset.screen;
+    showScreen(screen);
+    if (screen === 'history') renderHistory();
+  });
+});
+
+/* =========================================================
+   Today screen rendering
+   ========================================================= */
+function renderToday() {
+  const now = new Date();
+  document.getElementById('todayLabel').textContent = now.toLocaleDateString(undefined, {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  ['morning', 'evening'].forEach(office => {
+    const locked = isOfficeLocked(office);
+    const done = completedToday(office);
+    const card = document.getElementById('card-' + office);
+    const status = document.getElementById(office + '-status');
+    const sub = document.getElementById(office + '-sub');
+    card.classList.toggle('locked', locked);
+    status.textContent = done ? '✓' : (locked ? '🔒' : '○');
+    sub.textContent = done ? 'Completed today' : (locked ? 'Subscribe to unlock' : (office === 'morning' ? 'A quiet beginning' : 'An examined close'));
+  });
+
+  const streak = recalcStreak();
+  const banner = document.getElementById('streakBanner');
+  if (streak > 0) {
+    banner.style.display = 'flex';
+    document.getElementById('streakText').textContent =
+      streak === 1 ? '1 day streak' : `${streak} day streak`;
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+document.querySelectorAll('.office-card').forEach(card => {
+  card.addEventListener('click', () => {
+    tap();
+    const office = card.dataset.office;
+    if (isOfficeLocked(office)) {
+      openPaywall();
+      return;
+    }
+    openReading(office);
+  });
+});
+
+/* =========================================================
+   Reading screen
+   ========================================================= */
+let currentOffice = null;
+
+function openReading(office) {
+  currentOffice = office;
+  const idx = officeIndexForToday(office);
+  const entry = OFFICES[office][idx];
+  document.getElementById('readingTitle').textContent =
+    office === 'morning' ? 'Morning Office' : 'Evening Office';
+  document.getElementById('step-opening').textContent = entry.opening;
+  document.getElementById('step-scripture').textContent = entry.scripture;
+  document.getElementById('step-ref').textContent = entry.ref;
+  document.getElementById('step-reflection').textContent = entry.reflection;
+  document.getElementById('step-closing').textContent = entry.closing;
+
+  const log = State.get('completions', {});
+  const saved = log[todayKey()] && log[todayKey()][office];
+  document.getElementById('journalInput').value = saved ? saved.journal : '';
+  document.getElementById('completeOffice').textContent = saved ? 'Update Entry' : 'Mark Complete';
+
+  showScreen('reading');
+}
+
+document.getElementById('backFromReading').addEventListener('click', () => { tap(); showScreen('today'); renderToday(); });
+
+document.getElementById('completeOffice').addEventListener('click', async () => {
+  await tap();
+  const text = document.getElementById('journalInput').value;
+  markCompleted(currentOffice, text);
+  toast('Marked complete');
+  showScreen('today');
+  renderToday();
+});
+
+/* =========================================================
+   History screen
+   ========================================================= */
+function renderHistory() {
+  const log = State.get('completions', {});
+  const keys = Object.keys(log).sort().reverse();
+  const container = document.getElementById('historyList');
+  container.innerHTML = '';
+  if (!keys.length) {
+    container.innerHTML = '<div class="empty-state">Nothing recorded yet. Complete an office to start your history.</div>';
+    return;
+  }
+  keys.forEach(key => {
+    const day = log[key];
+    ['morning', 'evening'].forEach(office => {
+      if (!day[office]) return;
+      const div = document.createElement('div');
+      div.className = 'card history-entry';
+      const label = office === 'morning' ? 'Morning Office' : 'Evening Office';
+      const dateStr = new Date(key + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      div.innerHTML = `<div class="when">${dateStr} &middot; ${label}</div>` +
+        (day[office].journal ? `<div class="text">${escapeHtml(day[office].journal)}</div>` : '<div class="text" style="color:var(--ink-soft)">No journal entry</div>');
+      container.appendChild(div);
+    });
+  });
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+/* =========================================================
+   Settings: theme, font size, reminders
+   ========================================================= */
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+}
+function applyFontScale(scale) {
+  document.documentElement.style.setProperty('--font-scale', scale);
+}
+
+const darkToggle = document.getElementById('toggleDark');
+darkToggle.checked = State.get('dark', false);
+applyTheme(darkToggle.checked);
+darkToggle.addEventListener('change', () => {
+  State.set('dark', darkToggle.checked);
+  applyTheme(darkToggle.checked);
+});
+
+const fontSlider = document.getElementById('fontSlider');
+fontSlider.value = State.get('fontScale', 1);
+applyFontScale(fontSlider.value);
+fontSlider.addEventListener('input', () => {
+  State.set('fontScale', fontSlider.value);
+  applyFontScale(fontSlider.value);
+});
+
+const morningTimeInput = document.getElementById('morningTime');
+const eveningTimeInput = document.getElementById('eveningTime');
+morningTimeInput.value = State.get('morningTime', '07:00');
+eveningTimeInput.value = State.get('eveningTime', '21:00');
+
+async function scheduleReminders() {
+  if (!Plugins.LocalNotifications) return;
+  try {
+    const perm = await Plugins.LocalNotifications.requestPermissions();
+    if (perm.display !== 'granted') return;
+    await Plugins.LocalNotifications.cancel({ notifications: [{ id: 1 }, { id: 2 }] });
+
+    const [mh, mm] = morningTimeInput.value.split(':').map(Number);
+    const [eh, em] = eveningTimeInput.value.split(':').map(Number);
+
+    await Plugins.LocalNotifications.schedule({
+      notifications: [
+        {
+          id: 1,
+          title: 'Morning Office',
+          body: 'A quiet beginning is waiting for you.',
+          schedule: { on: { hour: mh, minute: mm }, repeats: true, allowWhileIdle: true }
+        },
+        {
+          id: 2,
+          title: 'Evening Office',
+          body: 'Time for an examined close to the day.',
+          schedule: { on: { hour: eh, minute: em }, repeats: true, allowWhileIdle: true }
+        }
+      ]
+    });
+  } catch (e) { /* notifications unavailable in this environment */ }
+}
+
+[morningTimeInput, eveningTimeInput].forEach(input => {
+  input.addEventListener('change', () => {
+    State.set('morningTime', morningTimeInput.value);
+    State.set('eveningTime', eveningTimeInput.value);
+    scheduleReminders();
+    toast('Reminder updated');
+  });
+});
+
+/* =========================================================
+   App Lock PIN (SHA-256 hash only — raw PIN is never stored)
+   ========================================================= */
+async function sha256(text) {
+  const enc = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+const lockToggle = document.getElementById('toggleLock');
+lockToggle.checked = !!State.get('pinHash', null);
+lockToggle.addEventListener('change', () => {
+  if (lockToggle.checked) {
+    beginPinSetup();
+  } else {
+    State.set('pinHash', null);
+    toast('App Lock disabled');
+  }
+});
+
+let pinBuffer = '';
+let pinMode = null; // 'setup-new' | 'setup-confirm' | 'unlock'
+let pinFirstEntry = '';
+
+function renderPinPad() {
+  const pad = document.getElementById('pinPad');
+  pad.innerHTML = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','', '0', '⌫'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    if (k === '') { b.style.visibility = 'hidden'; }
+    b.textContent = k;
+    b.addEventListener('click', () => onPinKey(k));
+    pad.appendChild(b);
+  });
+}
+renderPinPad();
+
+function renderPinDots() {
+  const dots = document.getElementById('pinDots');
+  dots.innerHTML = '';
+  for (let i = 0; i < 4; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i < pinBuffer.length ? ' filled' : '');
+    dots.appendChild(d);
+  }
+}
+
+async function onPinKey(k) {
+  if (k === '') return;
+  tap();
+  if (k === '⌫') {
+    pinBuffer = pinBuffer.slice(0, -1);
+    renderPinDots();
+    return;
+  }
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += k;
+  renderPinDots();
+  if (pinBuffer.length === 4) {
+    await handlePinComplete();
+  }
+}
+
+async function handlePinComplete() {
+  if (pinMode === 'setup-new') {
+    pinFirstEntry = pinBuffer;
+    pinBuffer = '';
+    pinMode = 'setup-confirm';
+    document.getElementById('pinPrompt').textContent = 'Confirm PIN';
+    renderPinDots();
+  } else if (pinMode === 'setup-confirm') {
+    if (pinBuffer === pinFirstEntry) {
+      const hash = await sha256(pinBuffer);
+      State.set('pinHash', hash);
+      closePinScreen();
+      toast('App Lock enabled');
+    } else {
+      toast('PINs did not match');
+      pinBuffer = '';
+      pinMode = 'setup-new';
+      document.getElementById('pinPrompt').textContent = 'Enter a new PIN';
+      renderPinDots();
+    }
+  } else if (pinMode === 'unlock') {
+    const hash = await sha256(pinBuffer);
+    const stored = State.get('pinHash', null);
+    if (hash === stored) {
+      closePinScreen();
+      unlocked = true;
+    } else {
+      toast('Incorrect PIN');
+      pinBuffer = '';
+      renderPinDots();
+    }
+  }
+}
+
+function beginPinSetup() {
+  pinMode = 'setup-new';
+  pinBuffer = '';
+  document.getElementById('pinPrompt').textContent = 'Enter a new PIN';
+  document.getElementById('pinCancel').style.display = 'inline-block';
+  renderPinDots();
+  document.getElementById('pinScreen').style.display = 'flex';
+}
+
+function beginPinUnlock() {
+  pinMode = 'unlock';
+  pinBuffer = '';
+  document.getElementById('pinPrompt').textContent = 'Enter PIN';
+  document.getElementById('pinCancel').style.display = 'none';
+  renderPinDots();
+  document.getElementById('pinScreen').style.display = 'flex';
+}
+
+function closePinScreen() {
+  document.getElementById('pinScreen').style.display = 'none';
+  pinBuffer = '';
+}
+
+document.getElementById('pinCancel').addEventListener('click', () => {
+  tap();
+  lockToggle.checked = false;
+  closePinScreen();
+});
+
+/* =========================================================
+   RevenueCat subscriptions
+   ========================================================= */
+const ENTITLEMENT_ID = 'premium';
+const REVENUECAT_API_KEY = 'YOUR_REVENUECAT_PUBLIC_API_KEY';
+let billingReady = false;
+
+async function initBilling() {
+  if (REVENUECAT_API_KEY === 'YOUR_REVENUECAT_PUBLIC_API_KEY') {
+    // Placeholder key detected — skip billing init so the rest of the app stays testable.
+    return;
+  }
+  const Purchases = Plugins.Purchases;
+  if (!Purchases) return;
+  try {
+    await Purchases.configure({ apiKey: REVENUECAT_API_KEY });
+    billingReady = true;
+    await refreshEntitlement();
+  } catch (e) { /* billing unavailable */ }
+}
+
+async function refreshEntitlement() {
+  if (!billingReady) return;
+  try {
+    const { customerInfo } = await Plugins.Purchases.getCustomerInfo();
+    const active = !!(customerInfo.entitlements.active && customerInfo.entitlements.active[ENTITLEMENT_ID]);
+    State.set('entitled', active);
+    updateSubStatusUI();
+  } catch (e) {}
+}
+
+function updateSubStatusUI() {
+  document.getElementById('subStatusLabel').textContent = isEntitled() ? 'Premium' : 'Free';
+  document.getElementById('manageSubBtn').textContent = isEntitled() ? 'Manage' : 'Upgrade';
+}
+
+document.getElementById('manageSubBtn').addEventListener('click', () => { tap(); openPaywall(); });
+
+document.getElementById('restoreBtn').addEventListener('click', async () => {
+  tap();
+  if (!billingReady) { toast('Not available in this preview'); return; }
+  try {
+    const { customerInfo } = await Plugins.Purchases.restorePurchases();
+    const active = !!(customerInfo.entitlements.active && customerInfo.entitlements.active[ENTITLEMENT_ID]);
+    State.set('entitled', active);
+    updateSubStatusUI();
+    toast(active ? 'Subscription restored' : 'No purchases found');
+    renderToday();
+  } catch (e) { toast('Restore failed'); }
+});
+
+let selectedPlan = 'monthly';
+document.querySelectorAll('.price-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    tap();
+    document.querySelectorAll('.price-option').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    selectedPlan = opt.dataset.plan;
+  });
+});
+
+function openPaywall() { document.getElementById('paywallScreen').style.display = 'flex'; }
+function closePaywall() { document.getElementById('paywallScreen').style.display = 'none'; }
+document.getElementById('paywallClose').addEventListener('click', () => { tap(); closePaywall(); });
+
+document.getElementById('subscribeBtn').addEventListener('click', async () => {
+  tap();
+  if (!billingReady) {
+    toast('Billing not configured yet — see README "Setting Up Real Billing"');
+    return;
+  }
+  try {
+    const offerings = await Plugins.Purchases.getOfferings();
+    const current = offerings.current;
+    if (!current) { toast('No offering configured'); return; }
+    const pkg = selectedPlan === 'monthly' ? current.monthly : current.annual;
+    if (!pkg) { toast('Plan not available'); return; }
+    const { customerInfo } = await Plugins.Purchases.purchasePackage({ aPackage: pkg });
+    const active = !!(customerInfo.entitlements.active && customerInfo.entitlements.active[ENTITLEMENT_ID]);
+    State.set('entitled', active);
+    updateSubStatusUI();
+    if (active) { toast('Subscribed — thank you'); closePaywall(); renderToday(); }
+  } catch (e) {
+    toast('Purchase could not be completed');
+  }
+});
+
+/* =========================================================
+   Boot
+   ========================================================= */
+let unlocked = false;
+
+function boot() {
+  renderToday();
+  updateSubStatusUI();
+  initBilling();
+  scheduleReminders();
+
+  const hasPin = !!State.get('pinHash', null);
+  if (hasPin) {
+    beginPinUnlock();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>
