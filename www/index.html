@@ -406,12 +406,24 @@ const State = {
 };
 
 const todayKey = () => new Date().toISOString().slice(0, 10);
+
+// Rotates through the available content for each office, counted from the
+// day this person first opened the app — so the free slot (index 0) always
+// lands on their actual first day, not on an arbitrary calendar date.
+function firstLaunchDate() {
+  let stored = State.get('firstLaunch', null);
+  if (!stored) {
+    stored = todayKey();
+    State.set('firstLaunch', stored);
+  }
+  return new Date(stored + 'T00:00:00');
+}
+
 const dayIndex = () => {
-  // Rotates through the available content for each office, deterministic by date.
-  const d = new Date();
-  const start = new Date(d.getFullYear(), 0, 1);
-  const diff = Math.floor((d - start) / 86400000);
-  return diff;
+  const start = firstLaunchDate();
+  const now = new Date(todayKey() + 'T00:00:00');
+  const diff = Math.floor((now - start) / 86400000);
+  return Math.max(0, diff);
 };
 
 function officeIndexForToday(office) {
